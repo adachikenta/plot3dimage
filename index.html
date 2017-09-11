@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>plot3d</title>
+<meta name="description" content="plot3d"> 
+<link href="http://fonts.googleapis.com/css?family=Vollkorn" rel="stylesheet" type="text/css" />
+<link href="style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="main.js"></script>
+<script type="text/javascript" src="RequestAnimationFrame.js"></script>
+<script type="text/javascript" src="three.js"></script>
+
+<script type="text/javascript">
+var disable = false;
+window.onload = function() {
+	document.getElementById('vis').style.display = 'block';
+	var vis = new PlumeGraph();
+	function loop() {
+		requestAnimationFrame( loop );
+		vis.draw();
+	}
+	loop();
+}
+
+function showAbout() {
+	disable = true;
+	var a = document.getElementById('about');
+	a.style.height =  window.innerHeight+'px';
+	a.getElementsByClassName('inner')[0].style.top = '60px';
+	a.addEventListener('mouseup', function() {
+		a.style.height = '0';
+		disable = false;
+	}, false);
+	return false;
+}
+</script>
+</head>
+
+<body>
+<div id="vis">
+</div>
+</body>
+</html>
