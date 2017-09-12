@@ -4,7 +4,7 @@ if (window.console == undefined) {
 	window['console'].error = function(s) {};
 }
 
-var PlumeGraph = function() {
+var PlumeGraph = function(data) {
 
 	var Easer = function(arr, val) {
 		var val = val || 0;
@@ -49,7 +49,7 @@ var PlumeGraph = function() {
 	var billboard = function(sprite, x, y, z, bsize, bsizeAt) {
 		var geo = new THREE.Geometry();
 		geo.vertices.push(new THREE.Vertex( new THREE.Vector3( x, y, z ) ) );
-		var labelMaterial = new THREE.ParticleBasicMaterial( { color: 0x000000, sizeAttenuation: bsizeAt, size: bsize,  map: sprite, vertexColors: true } );
+		var labelMaterial = new THREE.ParticleBasicMaterial( { color: 0x000000, sizeAttenuation: bsizeAt, size: bsize, map: sprite, vertexColors: true } );
 		var sys = new THREE.ParticleSystem( geo, labelMaterial );
 		sys.sortParticles = true;
 		sys.updateMatrix();
@@ -69,7 +69,7 @@ var PlumeGraph = function() {
 
 	var lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.088, linewidth: 1 } );
 	var addLine = function(x1, y1, z1, x2, y2, z2) {
-		var gg =  new THREE.Geometry();
+		var gg = new THREE.Geometry();
 		gg.vertices.push( new THREE.Vertex( new THREE.Vector3( x1, y1, z1 ) ) );
 		gg.vertices.push( new THREE.Vertex( new THREE.Vector3( x2, y2, z2 ) ) );
 		var line = new THREE.Line( gg, lineMaterial, THREE.LinePieces );
@@ -84,12 +84,12 @@ var PlumeGraph = function() {
 	angle.thresh = 0.01;
 	angle.round = false;
 	angle.easing = 0.15;
- 	var tcircleDist = 3000;
+ 	var tcircleDist = 2560;
 	var circleDist = new Easer(easers, tcircleDist);
 	circleDist.round = false;
 	circleDist.easing = 0.05;
 	var tangle = 0;
-	var teyeHeight = 512+128;
+	var teyeHeight = 1024;
 	var eyeHeight = new Easer(easers, teyeHeight);
 	eyeHeight.round = false;
 	var eyeDrop = 350;
@@ -104,68 +104,35 @@ var PlumeGraph = function() {
 		renderer.render( scene, camera );
 	};
 
+	var layers = {};
+	layers['L1'] = -512+256;
+	layers['L2'] =    0+256;
+	layers['L3'] = 1024+256;
+	var Pillar = function(json) {
+		for (var key in json) {
+			billboard(labelSprites[json[key].image], json[key].x, layers[json[key].layer], json[key].y, json[key].size, true);
+			if( null != json[key].from ){
+				lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000FF, opacity: 0.5, linewidth: 1 } );
+				addLine( json[key].x, layers[json[key].layer], json[key].y, json[json[key].from].x, layers[json[json[key].from].layer], json[json[key].from].y);
+				lineMaterial = new THREE.LineBasicMaterial( { color: 0xFF0000, opacity: 0.5, linewidth: 1 } );
+				addLine( json[key].x, layers[json[key].layer], json[key].y, json[json[key].to].x, layers[json[json[key].to].layer], json[json[key].to].y);
+				if( null == json[json[key].from].user) json[json[key].from].user = new Array();
+				json[json[key].from].user.push(key);
+				if( null == json[json[key].to].user) json[json[key].to].user = new Array();
+				json[json[key].to].user.push(key);
+			}
+			if( null != json[key].same ){
+				lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 1.0, linewidth: 2 } );
+				addLine( json[key].x, layers[json[key].layer], json[key].y, json[json[key].same].x, layers[json[json[key].same].layer], json[json[key].same].y);
+			}
+		}
+	}
+
+	var pp = [];
+	var pillars = {};
+	pp.push(pillars['node'] = new Pillar(data['node']));
+
 	lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.5, linewidth: 1 } );
-
-	var board_size = 128+64;
-	var L1 = -512+256;
-	var L3 =  1024+256;
-	billboard(labelSprites[0],   0,  L1,   512+256, board_size, true);
-	billboard(labelSprites[1],   0,  L1, -1024+256, board_size, true);
-	billboard(labelSprites[7],   0,  L3,         0, board_size, true);
-	addLine(  0,   L3,          0,   0,  L1,   512+256);
-	addLine(  0,   L3,          0,   0,  L1, -1024+256);
-
-	billboard(labelSprites[5],   512+256,  L1,         0, board_size, true);
-	billboard(labelSprites[12],  512+256,   L3,      512+256, board_size, true);
-	addLine(  512+256,   L3,      512+256,   0,  L1,   512+256);
-	addLine(  512+256,   L3,      512+256,   512+256,  L1,         0);
-
-	billboard(labelSprites[14],      512+256,  L3,   -1024+256, board_size, true);
-	addLine(      512+256,   L3,   -1024+256,   512+256,  -512+256,         0);
-	addLine(     512+256,   L3,   -1024+256,   0,  -512+256, -1024+256);
-
-	billboard(labelSprites[3],     0+256,  L1,         0, board_size, true);
-	billboard(labelSprites[13],      512,   L3,         0, board_size, true);
-	addLine(      512,   L3,          0,     0+256,  L1,         0);
-	addLine(      512,   L3,          0,   512+256,  L1,         0);
-
-	billboard(labelSprites[10],    0+256,   L3,      512+256, board_size, true);
-	addLine(    0+256,   L3,      512+256,   0,  L1,   512+256);
-	addLine(    0+256,   L3,      512+256,   0+256,  L1,         0);
-
-	billboard(labelSprites[17],    0+256,  L3,   -1024+256, board_size, true);
-	addLine(    0+256,   L3,   -1024+256,   0+256,  L1,         0);
-	addLine(    0+256,   L3,   -1024+256,   0,  L1, -1024+256);
-
-	//billboard(labelSprites[16],    0+256,  L3,   -512+256, board_size, true);
-	//addLine(    0+256,   L3,   -512+256,   0+256,  L1,         0);
-	//addLine(    0+256,   L3,   -512+256,   0,  L1, -1024+256);
-
-	billboard(labelSprites[4],  -512+256,  L1,           0, board_size, true);
-	billboard(labelSprites[11], -512+256,  L3,     512+256, board_size, true);
-	addLine(    -512+256,   L3,      512+256,   -512+256,  L1,           0);
-	addLine(    -512+256,   L3,      512+256,   0,  L1,   512+256);
-
-	billboard(labelSprites[15], -512+256,   L3,    -1024+256, board_size, true);
-	addLine(    -512+256,   L3,   -1024+256,   -512+256,  L1,         0);
-	addLine(    -512+256,   L3,   -1024+256,   0,  L1, -1024+256);
-
-	billboard(labelSprites[2], -1024+256,  L1,         0, board_size, true);
-	billboard(labelSprites[9],-1024+256,  L3,     512+256, board_size, true);
-	addLine(    -1024+256,   L3,      512+256,   -1024+256,  L1,           0);
-	addLine(    -1024+256,   L3,      512+256,   0,  L1,   512+256);
-	
-	billboard(labelSprites[18],-1024+256,  L3,    -1024+256, board_size, true);
-	addLine(    -1024+256,   L3,   -1024+256,   -1024+256,  L1,         0);
-	addLine(    -1024+256,   L3,   -1024+256,   0,  L1, -1024+256);
-
-	billboard(labelSprites[6],   0,  L1,   1024+256, board_size, true);
-	billboard(labelSprites[8],   0,  L3,   1024, board_size, true);
-	addLine(    0,   L3,      1024,   0,  L1,   1024+256);
-	addLine(    0,   L3,      1024,   0,  L1,   512+256);
-
-
-	lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.088, linewidth: 1 } );
 	for (var i = 0; i < 5; i++) {
 		if (i != 2) continue;
 		for (var j = 0; j < 5; j++) {
@@ -209,7 +176,7 @@ var PlumeGraph = function() {
 		}
 	}
 
-    window.addEventListener('DOMMouseScroll', wheel, false);
+	window.addEventListener('DOMMouseScroll', wheel, false);
 	document.addEventListener( 'mousewheel', wheel, false );
 
 	var pmouseX=null, pmouseY=null;

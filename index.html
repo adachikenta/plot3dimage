@@ -5,6 +5,7 @@
 <link href="http://fonts.googleapis.com/css?family=Vollkorn" rel="stylesheet" type="text/css" />
 <link href="style.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="main.js"></script>
+<script type="text/javascript" src="data.js"></script>
 <script type="text/javascript" src="RequestAnimationFrame.js"></script>
 <script type="text/javascript" src="three.js"></script>
 
@@ -12,7 +13,7 @@
 var disable = false;
 window.onload = function() {
 	document.getElementById('vis').style.display = 'block';
-	var vis = new PlumeGraph();
+	var vis = new PlumeGraph(data);
 	function loop() {
 		requestAnimationFrame( loop );
 		vis.draw();
@@ -36,6 +37,34 @@ function showAbout() {
 
 <body>
 <div id="vis">
+<div id="overlay">
+<div class="inner">
+<h1>plot3d</h1>
+<ul>
+	<li id="CP"><span class="title"></span>CP<span class="total">CP</span></li>
+	<li id="SP"><span class="title"></span>SP<span class="total">SP</span></li>
+	<li id="PP"><span class="title"></span>PP<span class="total">PP</span></li>
+	<li id="MP"><span class="title"></span>MP<span class="total">MP</span></li>
+	<li id="NP"><span class="title"></span>NP<span class="total">NP</span></li>
+	<li id="FP"><span class="title"></span>FP<span class="total">FP</span></li>
+	<li id="FF"><span class="title"></span>FF<span class="total">FF</span></li>
+	<li id="SF"><span class="title"></span>SF<span class="total">SF</span></li>
+	<li id="S2N"><span class="title"></span>S2N<span class="total">S2N</span></li>
+	<li id="S2E"><span class="title"></span>S2E<span class="total">S2E</span></li>
+	<li id="S2N"><span class="title"></span>S2N<span class="total">S2N</span></li>
+	<li id="S2P"><span class="title"></span>S2P<span class="total">S2P</span></li>
+</ul>
+<ul>
+	<li id="PR"><span class="title"></span>PR<span class="total">PR</span></li>
+	<li id="SC"><span class="title"></span>SC<span class="total">SC</span></li>
+	<li id="ST"><span class="title"></span>ST<span class="total">ST</span></li>
+	<li id="PC"><span class="title"></span>PC<span class="total">PC</span></li>
+	<li id="MD"><span class="title"></span>MD<span class="total">MD</span></li>
+	<li id="NT"><span class="title"></span>NT<span class="total">NT</span></li>
+	<li id="TL"><span class="title"></span>TL<span class="total">TL</span></li>
+</ul>
+</div>
+</div>
 </div>
 </body>
 </html>
