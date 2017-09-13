@@ -4,7 +4,7 @@ if (window.console == undefined) {
 	window['console'].error = function(s) {};
 }
 
-var PlumeGraph = function(data) {
+var PlumeGraph = function(data, nodes) {
 
 	var Easer = function(arr, val) {
 		var val = val || 0;
@@ -57,7 +57,7 @@ var PlumeGraph = function(data) {
 	}
 
 	var labelSprites = [];
-	for (var i = 0; i <= 18; i++) {
+	for (var i = 0; i <= 19; i++) {
 		var j = i < 10 ? '0'+i : i+'';
 		var path = "labels/labels_"+j+".png";
 		labelSprites.push(ImageUtils.loadTexture(path));
@@ -67,12 +67,40 @@ var PlumeGraph = function(data) {
 
 	document.body.appendChild( renderer.domElement );
 
+	for (var key in nodes) {
+		var li = document.getElementById(key);
+		li.addEventListener('mouseover', function() {
+			var visibleLink = [];
+			for (var key in links) {
+				if ( key == this.id ) {
+					for (var i = 0; i < links[key].length; i++) {
+						visibleLink.push(links[key][i]);
+					}
+				} else {
+					for (var i = 0; i < links[key].length; i++) {
+						links[key][i].visible = false;
+					}
+				}
+			}
+			for (var i = 0; i < visibleLink.length; i++) {
+				visibleLink[i].visible = true;
+			}
+		}, false);
+		li.addEventListener('mouseout', function() {
+			for (var key in links) {
+				for (var i = 0; i < links[key].length; i++) {
+					links[key][i].visible = true;
+				}
+			}
+		}, false);
+	}
+
 	var lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.088, linewidth: 1 } );
 	var addLine = function(x1, y1, z1, x2, y2, z2) {
-		var gg = new THREE.Geometry();
-		gg.vertices.push( new THREE.Vertex( new THREE.Vector3( x1, y1, z1 ) ) );
-		gg.vertices.push( new THREE.Vertex( new THREE.Vector3( x2, y2, z2 ) ) );
-		var line = new THREE.Line( gg, lineMaterial, THREE.LinePieces );
+		var geometry = new THREE.Geometry();
+		geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( x1, y1, z1 ) ) );
+		geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( x2, y2, z2 ) ) );
+		var line = new THREE.Line( geometry, lineMaterial, THREE.LinePieces );
 		line.material = lineMaterial;
 		line.updateMatrix();
 		scene.addObject( line );
@@ -104,22 +132,30 @@ var PlumeGraph = function(data) {
 		renderer.render( scene, camera );
 	};
 
+	var links = {};
 	var layers = {};
 	layers['L1'] = -512+256;
 	layers['L2'] =    0+256;
 	layers['L3'] = 1024+256;
 	var Pillar = function(json) {
 		for (var key in json) {
+			//if (json[key].skip) continue;
 			billboard(labelSprites[json[key].image], json[key].x, layers[json[key].layer], json[key].y, json[key].size, true);
 			if( null != json[key].from ){
 				lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000FF, opacity: 0.5, linewidth: 1 } );
-				addLine( json[key].x, layers[json[key].layer], json[key].y, json[json[key].from].x, layers[json[json[key].from].layer], json[json[key].from].y);
+				var link = addLine( json[key].x, layers[json[key].layer], json[key].y, json[json[key].from].x, layers[json[json[key].from].layer], json[json[key].from].y);
+				if( null == links[json[key].from]) links[json[key].from] = new Array();
+				links[json[key].from].push(link);
+				if( null == links[key]) links[key] = new Array();
+				links[key].push(link);
+			}
+			if( null != json[key].to ){
 				lineMaterial = new THREE.LineBasicMaterial( { color: 0xFF0000, opacity: 0.5, linewidth: 1 } );
-				addLine( json[key].x, layers[json[key].layer], json[key].y, json[json[key].to].x, layers[json[json[key].to].layer], json[json[key].to].y);
-				if( null == json[json[key].from].user) json[json[key].from].user = new Array();
-				json[json[key].from].user.push(key);
-				if( null == json[json[key].to].user) json[json[key].to].user = new Array();
-				json[json[key].to].user.push(key);
+				var link = addLine( json[key].x, layers[json[key].layer], json[key].y, json[json[key].to].x, layers[json[json[key].to].layer], json[json[key].to].y);
+				if( null == links[json[key].to]) links[json[key].to] = new Array();
+				links[json[key].to].push(link);
+				if( null == links[key]) links[key] = new Array();
+				links[key].push(link);
 			}
 			if( null != json[key].same ){
 				lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 1.0, linewidth: 2 } );
