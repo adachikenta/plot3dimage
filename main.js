@@ -47,10 +47,10 @@ var PlumeGraph = function(data, nodes) {
 	}
 	var scene = new THREE.Scene();
 	var billboard = function(sprite, x, y, z, bsize, bsizeAt) {
-		var geo = new THREE.Geometry();
-		geo.vertices.push(new THREE.Vertex( new THREE.Vector3( x, y, z ) ) );
+		var geometry = new THREE.Geometry();
+		geometry.vertices.push(new THREE.Vertex( new THREE.Vector3( x, y, z ) ) );
 		var labelMaterial = new THREE.ParticleBasicMaterial( { color: 0x000000, sizeAttenuation: bsizeAt, size: bsize, map: sprite, vertexColors: true } );
-		var sys = new THREE.ParticleSystem( geo, labelMaterial );
+		var sys = new THREE.ParticleSystem( geometry, labelMaterial );
 		sys.sortParticles = true;
 		sys.updateMatrix();
 		scene.addObject( sys );
@@ -67,9 +67,22 @@ var PlumeGraph = function(data, nodes) {
 
 	document.body.appendChild( renderer.domElement );
 
-	for (var key in nodes) {
+	var allSolid = function() {
+		var lis = document.getElementsByTagName('li');
+		for (var i = 0; i < lis.length; i++) {
+				lis[i].style.opacity = '1';
+				lis[i].setAttribute('class', '');
+		}
+	}
+	var stickied = false;
+	var unfocus = function() {
+		stickied = false;
+		allSolid();
+	}
+	var enableHighlightByCode = function(key) {
 		var li = document.getElementById(key);
 		li.addEventListener('mouseover', function() {
+			if (stickied) return;
 			var visibleLink = [];
 			for (var key in links) {
 				if ( key == this.id ) {
@@ -86,7 +99,19 @@ var PlumeGraph = function(data, nodes) {
 				visibleLink[i].visible = true;
 			}
 		}, false);
-		li.addEventListener('mouseout', function() {
+		li.addEventListener('mousedown', function() {
+			if (stickied) {
+				unfocus();
+				li.removeEventListener('mousedown', unfocus, false);
+			} else {
+				li.setAttribute('class', 'sticky');
+				stickied = true;
+				li.addEventListener('mousedown', unfocus, false);
+			}
+		}, false);
+		li.addEventListener('mouseout', function() { 
+			if (stickied) return;
+			unfocus()
 			for (var key in links) {
 				for (var i = 0; i < links[key].length; i++) {
 					links[key][i].visible = true;
@@ -94,6 +119,12 @@ var PlumeGraph = function(data, nodes) {
 			}
 		}, false);
 	}
+	var overlay = function() {
+		for (var key in nodes) {
+			enableHighlightByCode(key);
+		}
+	}
+	overlay();
 
 	var lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.088, linewidth: 1 } );
 	var addLine = function(x1, y1, z1, x2, y2, z2) {
@@ -132,6 +163,29 @@ var PlumeGraph = function(data, nodes) {
 		renderer.render( scene, camera );
 	};
 
+	lMeshMin = -512; lMeshMax = 1024+512; lMeshSize = lMeshMax - lMeshMin;
+	lMeshSpan = 256; lMeshNum = lMeshSize / lMeshSpan + lMeshSize % lMeshSpan;
+	lMeshMid = lMeshNum / 2 + lMeshNum % 2;
+	xyMeshMin = -1024; xyMeshMax = 1024; xyMeshSize = xyMeshMax - xyMeshMin;
+	xyMeshSpan = 512; xyMeshNum = xyMeshSize / xyMeshSpan + xyMeshSize % xyMeshSpan;
+	xyMeshMid = xyMeshNum / 2 + xyMeshNum % 2;
+	lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.5, linewidth: 1 } );
+	for (var l = 0; l <= lMeshNum; l++) {
+		if (l != lMeshMid && l != 1) continue;
+		for (var x = 0; x <= xyMeshNum; x++) {
+			addLine(xyMeshMax, lMeshMin+l*lMeshSpan, xyMeshMin+x*xyMeshSpan, xyMeshMin, lMeshMin+l*lMeshSpan, xyMeshMin+x*xyMeshSpan);
+			addLine(xyMeshMin+x*xyMeshSpan, lMeshMin+l*lMeshSpan, xyMeshMax, xyMeshMin+x*xyMeshSpan, lMeshMin+l*lMeshSpan, xyMeshMin);
+			if (l == lMeshNum) {
+				for (var y = 0; y <= xyMeshNum; y++) {
+					addLine(xyMeshMin+x*xyMeshSpan, lMeshMax, xyMeshMin+y*xyMeshSpan, xyMeshMin+x*xyMeshSpan, lMeshMin, xyMeshMin+y*xyMeshSpan);
+					if (x != xyMeshMid) {
+						addLine(xyMeshMin+y*xyMeshSpan, lMeshMax, xyMeshMin+x*xyMeshSpan, xyMeshMin+y*xyMeshSpan, lMeshMin, xyMeshMin+x*xyMeshSpan);
+					}
+				}
+			}
+		}
+	}
+
 	var links = {};
 	var layers = {};
 	layers['L1'] = -512+256;
@@ -168,22 +222,6 @@ var PlumeGraph = function(data, nodes) {
 	var pillars = {};
 	pp.push(pillars['node'] = new Pillar(data['node']));
 
-	lineMaterial = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.5, linewidth: 1 } );
-	for (var i = 0; i < 5; i++) {
-		if (i != 2) continue;
-		for (var j = 0; j < 5; j++) {
-			addLine(1024, (i-1)*512, (j-2)*512, -1024, (i-1)*512, (j-2)*512);
-			addLine((j-2)*512, (i-1)*512, 1024, (j-2)*512, (i-1)*512, -1024);
-			if (i == 0) {
-				for (var k = 0; k < 5; k++) {
-					addLine((j-2)*512, 1536, (k-2)*512, (j-2)*512, -512, (k-2)*512);
-					if (j != 2) {
-						addLine((k-2)*512, 1536, (j-2)*512, (k-2)*512, -512, (j-2)*512);
-					}
-				}
-			}
-		}
-	}
 	onResize();
 
 	var mouseDown = false;
